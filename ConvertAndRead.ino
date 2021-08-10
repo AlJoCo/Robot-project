@@ -6,7 +6,7 @@
 
 
 // 0x68 is the default address for all MCP342x devices
-uint8_t address = 0x6E;
+uint8_t address = 0x68;
 MCP342x adc = MCP342x(address);
 
 void setup(void)
@@ -39,7 +39,7 @@ void loop(void)
   MCP342x::Config status;
   // Initiate a conversion; convertAndRead() will wait until it can be read
   uint8_t err = adc.convertAndRead(MCP342x::channel1, MCP342x::oneShot,
-				   MCP342x::resolution16, MCP342x::gain1,
+				   MCP342x::resolution18, MCP342x::gain1,
 				   1000000, value, status);
   if (err) {
     Serial.print("Convert error: ");
