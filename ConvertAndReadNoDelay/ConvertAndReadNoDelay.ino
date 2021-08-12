@@ -1,16 +1,16 @@
 #include <Wire.h>
-#include <MCP342x.h>
+#include "MCP342x.h"
 
-/* Demonstrate the use of generalCallConversion(). This method is
- * useful to simultaneously instruct several MCP342x devices to begin
- * a one-shot analogue conversion, using the most recent
- * configuration. The results must be read back individually from each
- * device.
+/* Demonstrate the use of read() and convert(). If read() is called
+ * immediately after convert then the conversion will not have
+ * completed. Two approaches to avoid this problem are possible, use
+ * delay() or similar to wait a fixed amount of time, or to
+ * periodically read the device and check the config result.
  */
 
 
 // 0x68 is the default address for all MCP342x devices
-uint8_t address = 0x6E;
+uint8_t address = 0x68;
 MCP342x adc = MCP342x(address);
 
 // Configuration settings
@@ -39,7 +39,7 @@ void setup(void)
   Serial.begin(9600);
   Wire.begin();
 
-  // Enable power for MCP342x
+  // Enable power for MCP342x (needed for FL100 shield only)
   pinMode(9, OUTPUT);
   digitalWrite(9, HIGH);
   
@@ -58,10 +58,6 @@ void setup(void)
       ;
   }
 
-  // Configure the device with the desired settings. If there are
-  // multiple devices you must do this for each one.
-  adc.configure(config);
-  
   // First time loop() is called start a conversion
   startConversion = true;
 }
@@ -73,8 +69,12 @@ void loop(void)
   uint8_t err;
 
   if (startConversion) {
-    Serial.println("General call conversion");
-    MCP342x::generalCallConversion();
+    Serial.println("Convert");
+    err = adc.convert(config);
+    if (err) {
+      Serial.print("Convert error: ");
+      Serial.println(err);
+    }
     startConversion = false;
   }
   

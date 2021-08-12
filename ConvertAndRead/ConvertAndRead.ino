@@ -1,5 +1,5 @@
 #include <Wire.h>
-#include <MCP342x.h>
+#include "MCP342x.h"
 
 /* Demonstrate the use of convertAndRead().
  */
