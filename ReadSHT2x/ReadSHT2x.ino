@@ -8,7 +8,7 @@
  ***************************************************************/
 
 #include <Wire.h>
-#include <SHT2x.h>
+#include "SHT2x.h"
 
 
 void setup()
