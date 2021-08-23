@@ -1,6 +1,8 @@
 #include <Wire.h>
 #include "MCP342x.h"
-#include <SHT2x.h>
+#include "SHT2x.h"
+#include "TimedAction.h"
+
 
 #define ENABLE_MOT 22
 #define SLEEP_MOT 23
@@ -40,15 +42,6 @@ MCP342x::Config status;
 // Inidicate if a new conversion should be started
 bool startConversion = false;
 
-
-// LED details
-#ifdef LED_BUILTIN
-int led = LED_BUILTIN;
-#else
-int led = 13;
-#endif
-bool ledLevel = false;
-
 void Humiditytest(){
   Serial.print("Humidity(%RH): ");
   Serial.print(SHT2x.GetHumidity());
@@ -81,14 +74,6 @@ void Temperaturetest(){
     Serial.println(err);
     startConversion = true;
   }
-
-
-  // Do other stuff here, such as flash an LED
-  if (millis() - lastLedFlash > 50) {
-    ledLevel = !ledLevel;
-    digitalWrite(led, ledLevel);
-    lastLedFlash = millis();
-  }
     
 }
 
@@ -103,8 +88,6 @@ void setup(void)
   // Enable power for MCP342x (needed for FL100 shield only)
   pinMode(9, OUTPUT);
   digitalWrite(9, HIGH);
-  
-  pinMode(led, OUTPUT);
     
   // Reset devices
   MCP342x::generalCallReset();
@@ -149,8 +132,6 @@ void setup(void)
   startConversion = true;
 }
 
-unsigned long lastLedFlash = 0;
-
 void Read_Button()
 {
     buttonState = digitalRead(USR_BUTTON);
@@ -193,7 +174,7 @@ void loop(void) {
       digitalWrite(step_mot1, LOW);    
       delay(1);        
   }
-  
+
   temperatureThread.check();
   humidityThread.check();
 
