@@ -2,13 +2,29 @@
 #include "MCP342x.h"
 #include <SHT2x.h>
 
-/* Demonstrate the use of read() and convert(). If read() is called
- * immediately after convert then the conversion will not have
- * completed. Two approaches to avoid this problem are possible, use
- * delay() or similar to wait a fixed amount of time, or to
- * periodically read the device and check the config result.
- */
+#define ENABLE_MOT 22
+#define SLEEP_MOT 23
 
+#define dir_mot1 24
+#define step_mot1 25
+
+#define dir_mot2 26
+#define step_mot2 27
+
+#define dir_mot3 28
+#define step_mot3 29
+
+#define dir_mot4 30
+#define step_mot4 31
+
+#define dir_mot5 32
+#define step_mot5 33
+
+#define USR_BUTTON 34
+
+  int buttonState = 0;         // variable for reading the pushbutton status
+  bool toggle = 0;
+  bool latch = 1;
 
 // 0x68 is the default address for all MCP342x devices
 uint8_t address = 0x68;
@@ -33,49 +49,17 @@ int led = 13;
 #endif
 bool ledLevel = false;
 
-
-
-void setup(void)
-{
-  Serial.begin(9600);
-  Wire.begin();
-
-  // Enable power for MCP342x (needed for FL100 shield only)
-  pinMode(9, OUTPUT);
-  digitalWrite(9, HIGH);
-  
-  pinMode(led, OUTPUT);
-    
-  // Reset devices
-  MCP342x::generalCallReset();
-  delay(1); // MC342x needs 300us to settle
-  
-  // Check device present
-  Wire.requestFrom(address, (uint8_t)1);
-  if (!Wire.available()) {
-    Serial.print("No device found at address ");
-    Serial.println(address, HEX);
-    while (1)
-      ;
-  }
-
-  // First time loop() is called start a conversion
-  startConversion = true;
-}
-
-unsigned long lastLedFlash = 0;
-void loop(void)
-{
-  long value = 0;
-  uint8_t err;
-  {
+void Humiditytest(){
   Serial.print("Humidity(%RH): ");
   Serial.print(SHT2x.GetHumidity());
   Serial.print("     Temperature(C): ");
   Serial.println(SHT2x.GetTemperature());
-  
-  delay(1000);
 }
+
+void Temperaturetest(){
+  long value = 0;
+  uint8_t err;
+
   if (startConversion) {
     Serial.println("Convert");
     err = adc.convert(config);
@@ -106,4 +90,111 @@ void loop(void)
     lastLedFlash = millis();
   }
     
+}
+
+TimedAction temperatureThread = TimedAction(6000,Temperaturetest);
+TimedAction humidityThread = TimedAction(3000,Humiditytest);
+
+void setup(void)
+{
+  Serial.begin(9600);
+  Wire.begin();
+
+  // Enable power for MCP342x (needed for FL100 shield only)
+  pinMode(9, OUTPUT);
+  digitalWrite(9, HIGH);
+  
+  pinMode(led, OUTPUT);
+    
+  // Reset devices
+  MCP342x::generalCallReset();
+  delay(1); // MC342x needs 300us to settle
+  
+  // Check device present
+  Wire.requestFrom(address, (uint8_t)1);
+  if (!Wire.available()) {
+    Serial.print("No device found at address ");
+    Serial.println(address, HEX);
+    while (1)
+      ;
+  pinMode(ENABLE_MOT, OUTPUT);
+  pinMode(SLEEP_MOT, OUTPUT);
+  digitalWrite(ENABLE_MOT, LOW);
+  digitalWrite(SLEEP_MOT, HIGH);
+  
+  pinMode(dir_mot1, OUTPUT);
+  pinMode(step_mot1, OUTPUT);
+  digitalWrite(dir_mot1, HIGH);
+  
+  pinMode(dir_mot2, OUTPUT);
+  pinMode(step_mot2, OUTPUT);
+  digitalWrite(dir_mot2, HIGH);
+  
+  pinMode(dir_mot3, OUTPUT);
+  pinMode(step_mot3, OUTPUT);
+  digitalWrite(dir_mot3, HIGH);
+  
+  pinMode(dir_mot4, OUTPUT);
+  pinMode(step_mot4, OUTPUT);
+  digitalWrite(dir_mot4, HIGH);
+
+  pinMode(dir_mot5, OUTPUT);
+  pinMode(step_mot5, OUTPUT);
+  digitalWrite(dir_mot5, HIGH);
+
+  pinMode(USR_BUTTON, INPUT);
+  }
+
+  // First time loop() is called start a conversion
+  startConversion = true;
+}
+
+unsigned long lastLedFlash = 0;
+
+void Read_Button()
+{
+    buttonState = digitalRead(USR_BUTTON);
+      // check if the pushbutton is pressed. If it is, the buttonState is HIGH:
+    if (buttonState == HIGH && latch == 1)
+    {
+      delay(5);
+      buttonState = digitalRead(USR_BUTTON);
+      if(buttonState == HIGH)
+      {
+        if(toggle == 1) 
+        {
+          digitalWrite(dir_mot1, HIGH);
+          toggle = 0;
+        }
+        else
+        {
+          digitalWrite(dir_mot1, LOW);
+          toggle = 1;
+        }
+        latch = 0;
+      }
+    }
+    else if (buttonState == LOW)
+    {
+      latch = 1;
+    }
+}
+
+void loop(void) {
+
+  temperatureThread.check();
+  humidityThread.check();
+
+  while(1)
+  {
+    Read_Button();
+      digitalWrite(step_mot1, HIGH);   
+      delay(1);                      
+      digitalWrite(step_mot1, LOW);    
+      delay(1);        
+  }
+  
+  temperatureThread.check();
+  humidityThread.check();
+
 }
