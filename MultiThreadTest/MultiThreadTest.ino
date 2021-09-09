@@ -24,7 +24,8 @@
 
 #define USR_BUTTON 34
 
-  int buttonState = 0;         // variable for reading the pushbutton status
+/****** Global Variables ******/
+  int buttonState = 0;  // variable for reading the pushbutton status
   bool toggle = 0;
   bool latch = 1;
 
@@ -32,7 +33,7 @@
 uint8_t address = 0x68;
 MCP342x adc = MCP342x(address);
 
-// Configuration settings
+// ADC Configuration settings
 MCP342x::Config config(MCP342x::channel1, MCP342x::oneShot,
 		       MCP342x::resolution18, MCP342x::gain1);
 
@@ -42,16 +43,24 @@ MCP342x::Config status;
 // Inidicate if a new conversion should be started
 bool startConversion = false;
 
-Serial.print("Progress code 1");
+/****** Function: Get Humidity Measurement from SHT21 ******/
 
-void Humiditytest(){
+void Humiditytest()
+{
+  Serial.println("Humidity Test");/****** Debug Messege please delete when not required ******/
+  
   Serial.print("Humidity(%RH): ");
   Serial.print(SHT2x.GetHumidity());
   Serial.print("     Temperature(C): ");
   Serial.println(SHT2x.GetTemperature());
 }
 
-void Temperaturetest(){
+/****** Function: Get Temperature Measurement from SHT21 ******/
+
+void ADCRead()
+{
+  Serial.println("ADC Test");/****** Debug Messege please delete when not required ******/
+  
   long value = 0;
   uint8_t err;
 
@@ -76,21 +85,47 @@ void Temperaturetest(){
     Serial.println(err);
     startConversion = true;
   }
+  else
+  {
+    Serial.println("data not ready");
+  }
     
 }
 
-Serial.print("Progress code 2");
+/****** Function: Read Button Value include debounce ******/
 
-TimedAction temperatureThread = TimedAction(6000,Temperaturetest);
+bool Read_Button()
+{
+    buttonState = digitalRead(USR_BUTTON);
+      
+    if (buttonState == HIGH)
+    {
+      delay(5);
+      buttonState = digitalRead(USR_BUTTON);
+      if(buttonState == HIGH)
+      {
+        //Serial.println("Button HIGH");/****** Debug Messege please delete when not required ******/
+        return HIGH;
+      }
+    }
+    //Serial.println("Button LOW");/****** Debug Messege please delete when not required ******/
+    return LOW;
+}
+
+/****** Threading Setup ******/
+
+TimedAction ADCThread = TimedAction(6000,ADCRead);
 TimedAction humidityThread = TimedAction(3000,Humiditytest);
 
-Serial.print("Progress code 3");
+/****** Arduino Setup Function ******/
 
 void setup(void)
 {
   Serial.begin(9600);
   Wire.begin();
-
+  
+  Serial.println("Begun Serial communications");/****** Debug Messege please delete when not required ******/
+  
   // Enable power for MCP342x (needed for FL100 shield only)
   pinMode(9, OUTPUT);
   digitalWrite(9, HIGH);
@@ -101,11 +136,16 @@ void setup(void)
   
   // Check device present
   Wire.requestFrom(address, (uint8_t)1);
-  if (!Wire.available()) {
+  if (!Wire.available()) 
+  {
     Serial.print("No device found at address ");
     Serial.println(address, HEX);
     while (1)
+    {
       ;
+    }
+  }
+  
   pinMode(ENABLE_MOT, OUTPUT);
   pinMode(SLEEP_MOT, OUTPUT);
   digitalWrite(ENABLE_MOT, LOW);
@@ -132,60 +172,27 @@ void setup(void)
   digitalWrite(dir_mot5, HIGH);
 
   pinMode(USR_BUTTON, INPUT);
-  }
 
   // First time loop() is called start a conversion
   startConversion = true;
 }
 
-Serial.print("Progress code 4");
-
-void Read_Button()
-{
-    buttonState = digitalRead(USR_BUTTON);
-      // check if the pushbutton is pressed. If it is, the buttonState is HIGH:
-    if (buttonState == HIGH && latch == 1)
-    {
-      delay(5);
-      buttonState = digitalRead(USR_BUTTON);
-      if(buttonState == HIGH)
-      {
-        if(toggle == 1) 
-        {
-          digitalWrite(dir_mot1, HIGH);
-          toggle = 0;
-        }
-        else
-        {
-          digitalWrite(dir_mot1, LOW);
-          toggle = 1;
-        }
-        latch = 0;
-      }
-    }
-    else if (buttonState == LOW)
-    {
-      latch = 1;
-    }
-}
-
-Serial.print("Progress code 5");
+/****** Main Loop ******/ 
 
 void loop(void) {
 
-  temperatureThread.check();
+  ADCThread.check();
   humidityThread.check();
+  
+    if(Read_Button())
+    {
+        digitalWrite(step_mot1, HIGH);   
+        delay(1);                      
+        digitalWrite(step_mot1, LOW);    
+       delay(1);     
+    }   
 
-  while(1)
-  {
-    Read_Button();
-      digitalWrite(step_mot1, HIGH);   
-      delay(1);                      
-      digitalWrite(step_mot1, LOW);    
-      delay(1);        
-  }
-
-  temperatureThread.check();
+  ADCThread.check();
   humidityThread.check();
 
 }
