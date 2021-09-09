@@ -42,6 +42,8 @@ MCP342x::Config status;
 // Inidicate if a new conversion should be started
 bool startConversion = false;
 
+Serial.print("Progress code 1");
+
 void Humiditytest(){
   Serial.print("Humidity(%RH): ");
   Serial.print(SHT2x.GetHumidity());
@@ -77,8 +79,12 @@ void Temperaturetest(){
     
 }
 
+Serial.print("Progress code 2");
+
 TimedAction temperatureThread = TimedAction(6000,Temperaturetest);
 TimedAction humidityThread = TimedAction(3000,Humiditytest);
+
+Serial.print("Progress code 3");
 
 void setup(void)
 {
@@ -132,6 +138,8 @@ void setup(void)
   startConversion = true;
 }
 
+Serial.print("Progress code 4");
+
 void Read_Button()
 {
     buttonState = digitalRead(USR_BUTTON);
@@ -160,6 +168,8 @@ void Read_Button()
       latch = 1;
     }
 }
+
+Serial.print("Progress code 5");
 
 void loop(void) {
 
