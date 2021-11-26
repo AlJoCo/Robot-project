@@ -48,17 +48,17 @@ uint8_t MCP342x::generalCallConversion(void)
 void MCP342x::normalise(long &result, Config config)
 {
   /* Resolution is 12, 14, 16,or 18; gain is 1, 2, 4, or 8. Shift
-   * least places necessary such that all possibilities can be
-   * accounted for:
-   *
-   * 18 - resolution + 3 - log2(gain)
-   *
-   * Largest shift is for resolution==12 and gain==1 (9 places)
-   * Smallest is for resolution==18 and gain==8 (0 places) This means
-   * that the lowest 21 bits of the long result are used and that up
-   * to 1024 results can be safely accumulated without
-   * underflow/overflow.
-   */ 
+     least places necessary such that all possibilities can be
+     accounted for:
+
+     18 - resolution + 3 - log2(gain)
+
+     Largest shift is for resolution==12 and gain==1 (9 places)
+     Smallest is for resolution==18 and gain==8 (0 places) This means
+     that the lowest 21 bits of the long result are used and that up
+     to 1024 results can be safely accumulated without
+     underflow/overflow.
+  */
   result <<= (21 - int(config.getResolution()) - config.getGain().log2());
 }
 
@@ -67,7 +67,7 @@ MCP342x::MCP342x(void) : address(0x68)
 {
   ;
 }
-				
+
 MCP342x::MCP342x(uint8_t add) : address(add)
 {
   ;
@@ -87,11 +87,11 @@ bool MCP342x::autoprobe(const uint8_t *addressList, uint8_t len)
 
 
 /** Initiate a conversion by writing to the configuration register
- */
+*/
 MCP342x::error_t MCP342x::convert(Channel channel, Mode mode, Resolution resolution, Gain gain)
- {
-    return convert(Config(channel, mode, resolution, gain));
-  }
+{
+  return convert(Config(channel, mode, resolution, gain));
+}
 
 MCP342x::error_t MCP342x::configure(const Config &config) const
 {
@@ -123,7 +123,7 @@ MCP342x::error_t MCP342x::read(long &result, Config& status) const
   Wire.requestFrom(address, len);
   if (Wire.available() != len)
     return errorReadFailed;
-  
+
   for (uint8_t i = 0; i < len; ++i)
     buffer[i] = Wire.read();
 
@@ -136,29 +136,29 @@ MCP342x::error_t MCP342x::read(long &result, Config& status) const
     status = Config(buffer[2]);
     dataBytes = 2;
   }
-  
+
   if ((status & notReadyMask) != 0)
     return errorConversionNotReady;
 
   long signBit = 0;    // Location of sign bit
   long signExtend = 0; // Bits to be set if sign is set
   switch (int(status.getResolution())) {
-  case 12:
-    signBit = 0x800;
-    signExtend = 0xFFFFF000;
-    break;
-  case 14:
-    signBit = 0x2000;
-    signExtend = 0xFFFFC000;
-    break;
-  case 16:
-    signBit = 0x8000;
-    signExtend = 0xFFFF0000;
-    break;
-  case 18:
-    signBit = 0x20000;
-    signExtend = 0xFFFC0000;
-    break;
+    case 12:
+      signBit = 0x800;
+      signExtend = 0xFFFFF000;
+      break;
+    case 14:
+      signBit = 0x2000;
+      signExtend = 0xFFFFC000;
+      break;
+    case 16:
+      signBit = 0x8000;
+      signExtend = 0xFFFF0000;
+      break;
+    case 18:
+      signBit = 0x20000;
+      signExtend = 0xFFFC0000;
+      break;
   }
 
   result = 0;
@@ -166,12 +166,12 @@ MCP342x::error_t MCP342x::read(long &result, Config& status) const
     result <<= 8;
     result |= (long)buffer[i];
   }
-  
-  // Fill/blank remaining bits  
+
+  // Fill/blank remaining bits
   if ((result & signBit) != 0)
     result |= signExtend; // Sign bit is set, sign-extend
 
-  return errorNone;  
+  return errorNone;
 }
 
 
@@ -195,7 +195,7 @@ MCP342x::error_t MCP342x::convertAndRead(Channel channel, Mode mode, Resolution 
     err = read(result, status);
     if (!err && status.isReady())
       return err;
-    
+
   } while (long(micros() - t) >= 0);
   return errorReadTimeout;
 }
@@ -203,14 +203,14 @@ MCP342x::error_t MCP342x::convertAndRead(Channel channel, Mode mode, Resolution 
 unsigned long MCP342x::Resolution::getConversionTime(void) const
 {
   switch ((int)(*this)) {
-  case 12:
-    return 4167; // 240 SPS
-  case 14:
-    return 16667; // 60 SPS
-  case 16:
-    return 66667; // 15 SPS
-  case 18:
-    return 266667; // 3.75 SPS
+    case 12:
+      return 4167; // 240 SPS
+    case 14:
+      return 16667; // 60 SPS
+    case 16:
+      return 66667; // 15 SPS
+    case 18:
+      return 266667; // 3.75 SPS
   }
   return 0; // Shouldn't happen
 }

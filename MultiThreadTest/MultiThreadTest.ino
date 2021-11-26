@@ -34,8 +34,10 @@ uint8_t address = 0x68;
 MCP342x adc = MCP342x(address);
 
 // ADC Configuration settings
-MCP342x::Config config(MCP342x::channel1, MCP342x::oneShot,
+MCP342x::Config config1(MCP342x::channel2, MCP342x::oneShot,
 		       MCP342x::resolution18, MCP342x::gain1);
+MCP342x::Config config2(MCP342x::channel2, MCP342x::oneShot,
+           MCP342x::resolution18, MCP342x::gain1);
 
 // Configuration/status read back from the ADC
 MCP342x::Config status;
@@ -51,7 +53,7 @@ void Humiditytest()
   
   Serial.print("Humidity(%RH): ");
   Serial.print(SHT2x.GetHumidity());
-  Serial.print("     Temperature(C): ");
+  Serial.print("\nTemperature(C): ");
   Serial.println(SHT2x.GetTemperature());
 }
 
@@ -59,37 +61,72 @@ void Humiditytest()
 
 void ADCRead()
 {
-  Serial.println("ADC Test");/****** Debug Messege please delete when not required ******/
+  //Serial.println("ADC Test Channel 1");/****** Debug Messege please delete when not required ******/
   
   long value = 0;
   uint8_t err;
 
   if (startConversion) {
-    Serial.println("Convert");
-    err = adc.convert(config);
+    //Serial.println("Convert");
+    //adc.configure(config);
+    err = adc.convert(config1);
     if (err) {
       Serial.print("Convert error: ");
       Serial.println(err);
     }
     startConversion = false;
   }
+
+  delay(5); // wait for conversion to occur
   
   err = adc.read(value, status);
   if (!err && status.isReady()) { 
     // For debugging purposes print the return value.
-    Serial.print("Value: ");
+    Serial.print("Light: ");
     Serial.println(value);
-    Serial.print("Config: 0x");
-    Serial.println((int)config, HEX);
-    Serial.print("Convert error: ");
-    Serial.println(err);
+    //Serial.print("Config: 0x");
+    //Serial.println((int)config1, HEX);
+    //Serial.print("Convert error: ");
+    //Serial.println(err);
     startConversion = true;
   }
   else
   {
     Serial.println("data not ready");
   }
-    
+/************************** Read channel 2 ***********************/
+   // Serial.println("ADC Test Channel 2");/****** Debug Messege please delete when not required ******/
+  
+  value = 0;
+  err = 0;
+
+  if (startConversion) {
+    //Serial.println("Convert");
+    err = adc.convert(config2);
+    if (err) {
+      Serial.print("Convert error: ");
+      Serial.println(err);
+    }
+    startConversion = false;
+  }
+
+  delay(5); // wait for conversion to occur
+  
+  err = adc.read(value, status);
+  if (!err && status.isReady()) { 
+    // For debugging purposes print the return value.
+    Serial.print("Moisture: ");
+    Serial.println(value);
+    //Serial.print("Config: 0x");
+    //Serial.println((int)config2, HEX);
+    //Serial.print("Convert error: ");
+   // Serial.println(err);
+    startConversion = true;
+  }
+  else
+  {
+    Serial.println("data not ready");
+  }
 }
 
 /****** Function: Read Button Value include debounce ******/
@@ -114,8 +151,8 @@ bool Read_Button()
 
 /****** Threading Setup ******/
 
-TimedAction ADCThread = TimedAction(6000,ADCRead);
-TimedAction humidityThread = TimedAction(3000,Humiditytest);
+TimedAction ADCThread = TimedAction(500,ADCRead);
+TimedAction humidityThread = TimedAction(500,Humiditytest);
 
 /****** Arduino Setup Function ******/
 
@@ -125,10 +162,6 @@ void setup(void)
   Wire.begin();
   
   Serial.println("Begun Serial communications");/****** Debug Messege please delete when not required ******/
-  
-  // Enable power for MCP342x (needed for FL100 shield only)
-  pinMode(9, OUTPUT);
-  digitalWrite(9, HIGH);
     
   // Reset devices
   MCP342x::generalCallReset();
@@ -145,7 +178,9 @@ void setup(void)
       ;
     }
   }
-  
+
+   adc.configure(config2);
+
   pinMode(ENABLE_MOT, OUTPUT);
   pinMode(SLEEP_MOT, OUTPUT);
   digitalWrite(ENABLE_MOT, LOW);
@@ -187,12 +222,8 @@ void loop(void) {
     if(Read_Button())
     {
         digitalWrite(step_mot1, HIGH);   
-        delay(1);                      
+        delay(1);                     
         digitalWrite(step_mot1, LOW);    
-       delay(1);     
+        delay(1);     
     }   
-
-  ADCThread.check();
-  humidityThread.check();
-
 }

@@ -2,7 +2,7 @@
   SHT2x - A Humidity Library for Arduino.
   Supported Sensor modules:
     SHT21-Breakout Module - http://www.elechouse.com/elechouse/index.php?main_page=product_info&cPath=152_158&products_id=2235
-	
+
   Created by Christopher Ladden at Modern Device on December 2009.
   Modified by Paul Badger March 2010
   This library is free software; you can redistribute it and/or
@@ -26,55 +26,55 @@
 
 
 /******************************************************************************
- * Global Functions
+   Global Functions
  ******************************************************************************/
 
 /**********************************************************
- * GetHumidity
- *  Gets the current humidity from the sensor.
- *
- * @return float - The relative humidity in %RH
+   GetHumidity
+    Gets the current humidity from the sensor.
+
+   @return float - The relative humidity in %RH
  **********************************************************/
 float SHT2xClass::GetHumidity(void)
 {
-	return (-6.0 + 125.0 / 65536.0 * (float)(readSensor(eRHumidityHoldCmd)));
+  return (-6.0 + 125.0 / 65536.0 * (float)(readSensor(eRHumidityHoldCmd)));
 }
 
 /**********************************************************
- * GetTemperature
- *  Gets the current temperature from the sensor.
- *
- * @return float - The temperature in Deg C
+   GetTemperature
+    Gets the current temperature from the sensor.
+
+   @return float - The temperature in Deg C
  **********************************************************/
 float SHT2xClass::GetTemperature(void)
 {
-	return (-46.85 + 175.72 / 65536.0 * (float)(readSensor(eTempHoldCmd)));
+  return (-46.85 + 175.72 / 65536.0 * (float)(readSensor(eTempHoldCmd)));
 }
 
 
 /******************************************************************************
- * Private Functions
+   Private Functions
  ******************************************************************************/
 
 uint16_t SHT2xClass::readSensor(uint8_t command)
 {
-    uint16_t result;
+  uint16_t result;
 
-    Wire.beginTransmission(eSHT2xAddress);	//begin
-    Wire.write(command);					//send the pointer location
-    delay(100);
-    Wire.endTransmission();               	//end
+  Wire.beginTransmission(eSHT2xAddress);	//begin
+  Wire.write(command);					//send the pointer location
+  delay(100);
+  Wire.endTransmission();               	//end
 
-    Wire.requestFrom(eSHT2xAddress, 3);
-    while(Wire.available() < 3) {
-      ; //wait
-    }
+  Wire.requestFrom(eSHT2xAddress, 3);
+  while (Wire.available() < 3) {
+    ; //wait
+  }
 
-    //Store the result
-    result = ((Wire.read()) << 8);
-    result += Wire.read();
-	result &= ~0x0003;   // clear two low bits (status bits)
-    return result;
+  //Store the result
+  result = ((Wire.read()) << 8);
+  result += Wire.read();
+  result &= ~0x0003;   // clear two low bits (status bits)
+  return result;
 }
 
 SHT2xClass SHT2x;

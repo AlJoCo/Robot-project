@@ -2,7 +2,7 @@
   SHT2x - A Humidity Library for Arduino.
   Supported Sensor modules:
     SHT21-Breakout Module - http://www.elechouse.com/elechouse/index.php?main_page=product_info&cPath=152_158&products_id=2235
-	
+
   Created by Christopher Ladden at Modern Device on December 2009.
   Modified by Paul Badger March 2010
   This library is free software; you can redistribute it and/or
@@ -25,20 +25,20 @@
 #include <inttypes.h>
 
 typedef enum {
-    eSHT2xAddress = 0x40,
+  eSHT2xAddress = 0x40,
 } HUM_SENSOR_T;
 
 typedef enum {
-    eTempHoldCmd		= 0xE3,
-    eRHumidityHoldCmd	= 0xE5,
-    eTempNoHoldCmd      = 0xF3,
-    eRHumidityNoHoldCmd = 0xF5,
+  eTempHoldCmd		= 0xE3,
+  eRHumidityHoldCmd	= 0xE5,
+  eTempNoHoldCmd      = 0xF3,
+  eRHumidityNoHoldCmd = 0xF5,
 } HUM_MEASUREMENT_CMD_T;
 
 class SHT2xClass
 {
   private:
-	uint16_t readSensor(uint8_t command);
+    uint16_t readSensor(uint8_t command);
 
   public:
     float GetHumidity(void);
